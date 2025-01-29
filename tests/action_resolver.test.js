@@ -76,3 +76,68 @@ describe("Action Resolver Tests", () => {
         expect(result.ignoredAgents).toContain("AgentB"); // ✅ Ensures subordinate agent's action is ignored
     });
 });
+
+
+describe("Action Resolver - Simultaneous Actions", () => {
+    let agentA, agentB, agentC, agentD;
+    let agents;
+
+    beforeEach(() => {
+        agentA = new Agent("AgentA", 1000);
+        agentB = new Agent("AgentB", 800);
+        agentC = new Agent("AgentC", 600);
+        agentD = new Agent("AgentD", 400);
+
+        // Assign positions
+        agentA.x = 0; agentA.y = 0;
+        agentB.x = 1; agentB.y = 0;
+        agentC.x = 2; agentC.y = 0;
+        agentD.x = 3; agentD.y = 0;
+
+        agents = [agentA, agentB, agentC, agentD];
+    });
+
+    test("Simultaneous battle proposals result in a single battle", () => {
+        const actions = {
+            "AgentA": { action: "Battle", target: "AgentB" },
+            "AgentB": { action: "Battle", target: "AgentA" },
+        };
+
+        const result = resolveActions(actions, agents, []);
+        expect(result.battles.length).toBe(1);
+    });
+
+    test("Multiple battle proposals prioritize higher balance agent", () => {
+        const actions = {
+            "AgentA": { action: "Battle", target: "AgentC" },
+            "AgentB": { action: "Battle", target: "AgentC" },
+        };
+
+        const result = resolveActions(actions, agents, []);
+        expect(result.battles.length).toBe(1);
+        expect(result.battles[0].winningAgents.includes("AgentA")).toBeTruthy();
+    });
+
+    test("Simultaneous alliance proposals result in correct formation", () => {
+        const actions = {
+            "AgentA": { action: "Alliance", target: "AgentB" },
+            "AgentB": { action: "Alliance", target: "AgentA" },
+            "AgentC": { action: "Alliance", target: "AgentD" },
+            "AgentD": { action: "Alliance", target: "AgentC" },
+        };
+
+        const result = resolveActions(actions, agents, []);
+        expect(result.newAlliances.length).toBe(2);
+    });
+
+    test("Conflicting alliance requests prioritize higher balance", () => {
+        const actions = {
+            "AgentA": { action: "Alliance", target: "AgentB" },
+            "AgentC": { action: "Alliance", target: "AgentB" },
+        };
+
+        const result = resolveActions(actions, agents, []);
+        expect(result.newAlliances.length).toBe(1);
+        expect(result.newAlliances[0][0].name).toBe("AgentA");
+    });
+});
