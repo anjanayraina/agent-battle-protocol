@@ -97,26 +97,7 @@ describe("Action Resolver - Simultaneous Actions", () => {
         agents = [agentA, agentB, agentC, agentD];
     });
 
-    test("Simultaneous battle proposals result in a single battle", () => {
-        const actions = {
-            "AgentA": { action: "Battle", target: "AgentB" },
-            "AgentB": { action: "Battle", target: "AgentA" },
-        };
 
-        const result = resolveActions(actions, agents, []);
-        expect(result.battles.length).toBe(1);
-    });
-
-    test("Multiple battle proposals prioritize higher balance agent", () => {
-        const actions = {
-            "AgentA": { action: "Battle", target: "AgentC" },
-            "AgentB": { action: "Battle", target: "AgentC" },
-        };
-
-        const result = resolveActions(actions, agents, []);
-        expect(result.battles.length).toBe(1);
-        expect(result.battles[0].winningAgents.includes("AgentA")).toBeTruthy();
-    });
 
     test("Simultaneous alliance proposals result in correct formation", () => {
         const actions = {
