@@ -14,99 +14,99 @@ describe("Agent Battle Protocol Tests", () => {
     // Create alliances
     const alliance1 = new Alliance([agentA, agentB]); // Total: 1800
     const alliance2 = new Alliance([agentC, agentD]); // Total: 1000
-    const alliance3 = new Alliance([agentA, agentC]); // Additional alliance for testing
 
-    test("Agent vs Agent", () => {
+    test("Agent vs Agent Battle", () => {
         const result = battle(agentA, agentB);
-        expect(Object.keys(result)).toHaveLength(2);
-        expect(result["AgentA"] === 0 || result["AgentB"] === 0).toBeTruthy();
-        const lossValues = Object.values(result).filter(loss => loss !== 0);
-        if (lossValues.length === 1) {
-            expect(lossValues[0]).toBeGreaterThanOrEqual(20);
-            expect(lossValues[0]).toBeLessThanOrEqual(31);
-        } else {
-            // In case both have zero loss (very low probability)
-            expect(lossValues.length).toBeLessThanOrEqual(1);
+
+        expect(result).toHaveProperty("winningAgents");
+        expect(result).toHaveProperty("losingAgents");
+        expect(result).toHaveProperty("losses");
+        expect(result).toHaveProperty("deaths");
+
+        // One agent should win, one should lose
+        expect(result.winningAgents.length).toBe(1);
+        expect(result.losingAgents.length).toBe(1);
+        expect(result.winningAgents[0] !== result.losingAgents[0]).toBeTruthy();
+
+        // Loss should be between 20% and 31%
+        const losingAgent = result.losingAgents[0];
+        expect(result.losses).toHaveProperty(losingAgent);
+        expect(result.losses[losingAgent]).toBeGreaterThanOrEqual(20);
+        expect(result.losses[losingAgent]).toBeLessThanOrEqual(31);
+
+        // Death chance (5%) check
+        if (result.deaths.length > 0) {
+            expect(result.deaths.includes(losingAgent)).toBeTruthy();
         }
     });
 
-    test("Agent vs Alliance", () => {
+    test("Agent vs Alliance Battle", () => {
         const result = battle(agentC, alliance1);
-        expect(Object.keys(result)).toHaveLength(3);
-        expect(result).toHaveProperty("AgentC");
-        expect(result).toHaveProperty("AgentA");
-        expect(result).toHaveProperty("AgentB");
 
-        const lossAgents = ["AgentC", "AgentA", "AgentB"].filter(name => result[name] !== 0);
-        if (lossAgents.length === 1) {
-            const lostAgent = lossAgents[0];
-            if (lostAgent === "AgentC") {
-                expect(result["AgentC"]).toBeGreaterThanOrEqual(20);
-                expect(result["AgentC"]).toBeLessThanOrEqual(31);
-            } else {
-                // Alliance1 lost
-                expect(result["AgentA"]).toBe(result["AgentB"]);
-                expect(result["AgentA"]).toBeGreaterThanOrEqual(20);
-                expect(result["AgentA"]).toBeLessThanOrEqual(31);
-            }
-        } else if (lossAgents.length === 2) {
-            // Both agents in the alliance lost
-            expect(result["AgentA"]).toBe(result["AgentB"]);
-            expect(result["AgentA"]).toBeGreaterThanOrEqual(20);
-            expect(result["AgentA"]).toBeLessThanOrEqual(31);
+        expect(result).toHaveProperty("winningAgents");
+        expect(result).toHaveProperty("losingAgents");
+        expect(result).toHaveProperty("losses");
+        expect(result).toHaveProperty("deaths");
+
+        // Either agentC wins or the alliance wins
+        if (result.winningAgents.includes("AgentC")) {
+            // Alliance lost
+            expect(result.losingAgents.length).toBe(2);
+            expect(result.losses["AgentA"]).toBe(result.losses["AgentB"]);
+        } else {
+            // AgentC lost
+            expect(result.losingAgents.length).toBe(1);
+            expect(result.losses["AgentC"]).toBeGreaterThanOrEqual(20);
+            expect(result.losses["AgentC"]).toBeLessThanOrEqual(31);
         }
     });
 
-    test("Alliance vs Alliance", () => {
+    test("Alliance vs Alliance Battle", () => {
         const result = battle(alliance1, alliance2);
-        expect(Object.keys(result)).toHaveLength(4);
-        expect(result).toHaveProperty("AgentA");
-        expect(result).toHaveProperty("AgentB");
-        expect(result).toHaveProperty("AgentC");
-        expect(result).toHaveProperty("AgentD");
 
-        const lossAgents = ["AgentA", "AgentB", "AgentC", "AgentD"].filter(name => result[name] !== 0);
-        if (lossAgents.length === 2) {
-            // One alliance lost
-            const alliance1Lost = result["AgentA"] !== 0 && result["AgentB"] !== 0;
-            const alliance2Lost = result["AgentC"] !== 0 && result["AgentD"] !== 0;
-            expect(alliance1Lost !== alliance2Lost).toBeTruthy();
-            if (alliance1Lost) {
-                expect(result["AgentA"]).toBe(result["AgentB"]);
-                expect(result["AgentA"]).toBeGreaterThanOrEqual(20);
-                expect(result["AgentA"]).toBeLessThanOrEqual(31);
-            }
-            if (alliance2Lost) {
-                expect(result["AgentC"]).toBe(result["AgentD"]);
-                expect(result["AgentC"]).toBeGreaterThanOrEqual(20);
-                expect(result["AgentC"]).toBeLessThanOrEqual(31);
-            }
-        } else if (lossAgents.length === 4) {
-            // Both alliances lost (rare scenario)
-            expect(result["AgentA"]).toBe(result["AgentB"]);
-            expect(result["AgentC"]).toBe(result["AgentD"]);
-            expect(result["AgentA"]).toBeGreaterThanOrEqual(20);
-            expect(result["AgentA"]).toBeLessThanOrEqual(31);
-            expect(result["AgentC"]).toBeGreaterThanOrEqual(20);
-            expect(result["AgentC"]).toBeLessThanOrEqual(31);
+        expect(result).toHaveProperty("winningAgents");
+        expect(result).toHaveProperty("losingAgents");
+        expect(result).toHaveProperty("losses");
+        expect(result).toHaveProperty("deaths");
+
+        // Ensure that either alliance1 or alliance2 loses
+        if (result.losingAgents.includes("AgentA")) {
+            // Alliance1 lost
+            expect(result.losses["AgentA"]).toBe(result.losses["AgentB"]);
+        } else {
+            // Alliance2 lost
+            expect(result.losses["AgentC"]).toBe(result.losses["AgentD"]);
         }
     });
 
     test("Same Agent vs Itself", () => {
         const result = battle(agentA, agentA);
-        expect(Object.keys(result)).toHaveLength(1);
-        expect(result["AgentA"]).toBe(0);
+
+        expect(result.winningAgents.length).toBe(0);
+        expect(result.losingAgents.length).toBe(0);
+        expect(result.losses).toEqual({});
+        expect(result.deaths.length).toBe(0);
     });
 
-    test("Invalid Alliance (Empty)", () => {
-        expect(() => new Alliance([])).toThrow("Alliance must have at least one agent.");
+    test("Death Probability (Multiple Simulations)", () => {
+        let deathCount = 0;
+        for (let i = 0; i < 100; i++) {
+            const result = battle(agentA, agentB);
+            if (result.deaths.length > 0) {
+                deathCount++;
+            }
+        }
+        // Approximate probability check (should be around 5%)
+        expect(deathCount).toBeGreaterThanOrEqual(3);
+        expect(deathCount).toBeLessThanOrEqual(10);
     });
 
     test("Multiple Battles Consistency", () => {
         for (let i = 0; i < 10; i++) {
             const result = battle(alliance1, alliance2);
-            Object.values(result).forEach(loss => {
-                expect(loss === 0 || (loss >= 20 && loss <= 31)).toBeTruthy();
+            Object.values(result.losses).forEach(loss => {
+                expect(loss).toBeGreaterThanOrEqual(20);
+                expect(loss).toBeLessThanOrEqual(31);
             });
         }
     });

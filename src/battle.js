@@ -8,9 +8,19 @@ const { getRandomInt } = require('./utils');
  * Performs a battle between two entities (Agent or Alliance).
  * @param {Agent|Alliance} entity1 
  * @param {Agent|Alliance} entity2 
- * @returns {Object} - Mapping of agent names to their percentage loss.
+ * @returns {Object} - Contains winning agents, losing agents, percentage loss, and death checks.
  */
 function battle(entity1, entity2) {
+    // If the entities are the same, return a neutral result (self-battle case)
+    if (entity1 === entity2) {
+        return {
+            winningAgents: [],
+            losingAgents: [],
+            losses: {},
+            deaths: []
+        };
+    }
+
     // Helper function to get total balance and list of agents
     function getEntityInfo(entity) {
         if (entity instanceof Agent) {
@@ -44,11 +54,13 @@ function battle(entity1, entity2) {
 
     // Determine battle outcome
     const rand = Math.random();
-    let loserInfo;
+    let winnerInfo, loserInfo;
 
     if (rand < probability1) {
+        winnerInfo = info1;
         loserInfo = info2;
     } else {
+        winnerInfo = info2;
         loserInfo = info1;
     }
 
@@ -56,16 +68,21 @@ function battle(entity1, entity2) {
     const lossPercentage = getRandomInt(20, 31);
 
     // Prepare the result object
-    const result = {};
-
-    // Initialize all agents with 0 loss
-    [...info1.agents, ...info2.agents].forEach(agent => {
-        result[agent.name] = 0;
-    });
+    const result = {
+        winningAgents: winnerInfo.agents.map(agent => agent.name),
+        losingAgents: loserInfo.agents.map(agent => agent.name),
+        losses: {},
+        deaths: []
+    };
 
     // Assign loss to the losing agents
     loserInfo.agents.forEach(agent => {
-        result[agent.name] = lossPercentage;
+        result.losses[agent.name] = lossPercentage;
+
+        // 5% chance of death
+        if (Math.random() < 0.05) {
+            result.deaths.push(agent.name);
+        }
     });
 
     return result;
