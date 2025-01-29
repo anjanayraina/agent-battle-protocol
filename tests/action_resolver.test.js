@@ -36,6 +36,20 @@ describe("Action Resolver Tests", () => {
         expect(result.ignoredAgents).toEqual(["AgentB", "AgentC", "AgentD"]);
     });
 
+    test("Battle occurs if at least one agent initiates and other says alliance", () => {
+        const actions = {
+            "AgentA": { action: "Battle", target: "AgentB" },
+            "AgentB": { action: "Alliance"  , target : "AgentA" },
+            "AgentC": { action: "Ignore" },
+            "AgentD": { action: "Ignore" },
+        };
+
+        const result = resolveActions(actions, agents, []);
+        expect(result.battles.length).toBe(1);
+        expect(result.ignoredAgents).toEqual(["AgentB", "AgentC", "AgentD"]);
+    });
+
+
     test("Alliance is only formed if both agents agree", () => {
         const actions = {
             "AgentA": { action: "Alliance", target: "AgentB" },
